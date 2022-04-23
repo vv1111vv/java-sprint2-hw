@@ -15,11 +15,15 @@ public class Main {
     private final static Scanner scanner = new Scanner(System.in);
     public static String logica_amr;
     public static String logica_yr;
+    public static String logica_M;
+    public static String logica_Y;
 
 
     public static void main(String[] args) throws Exception {
         Main.logica_amr = "Доступ закрыт";
         Main.logica_yr = "Доступ закрыт";
+        Main.logica_M = "Проверка наличия файлов";
+        Main.logica_Y = "Проверка наличия файлов";
 
         Path path = Paths.get("resources");
         List<Path> paths = listFiles(path);
@@ -33,17 +37,26 @@ public class Main {
 
             switch (userInput){
                 case 1:
+
                     readMonthlyReports(paths);
                     logicaAMR();
+                    howManyFiles(paths);
                     printMenu();
                     break;
                 case 2:
+
                     readYearlyReports(paths);
                     logicaYR();
                     printMenu();
                     break;
                 case 3:
-                    if (Main.logica_amr.equals("allMonthlyReports доступен") && Main.logica_yr.equals("yearReport доступен")) {
+                    if (Main.logica_M.equals("Файлы отсутствуют")) {
+                        System.out.println("Файлы отсутствуют");
+                    }
+                    else if (Main.logica_M.equals("Недостаточно файлов")) {
+                        System.out.println("Недостаточно файлов");
+                    }
+                    else if (Main.logica_amr.equals("allMonthlyReports доступен") && Main.logica_yr.equals("yearReport доступен")) {
                         reconciliationOfReports(paths);
                     } else {
                         System.out.println("** Для сверки необходимо считать все отчёты");
@@ -51,15 +64,24 @@ public class Main {
                     printMenu();
                     break;
                 case 4:
-                    if (Main.logica_amr.equals("allMonthlyReports доступен")) {
+                    if (Main.logica_M.equals("Файлы отсутствуют")) {
+                        System.out.println("Файлы отсутствуют");
+                    }
+                    else if (Main.logica_amr.equals("allMonthlyReports доступен")) {
                         allMonthlyReports(paths);
+                    }
+                    else if (Main.logica_M.equals("Недостаточно файлов для сверки")) {
+                        System.out.println("Недостаточно файлов для сверки");
                     } else {
                         System.out.println("** Необходимо считать все месячные отчёты");
                     }
                     printMenu();
                     break;
                 case 5:
-                    if (Main.logica_yr.equals("yearReport доступен")) {
+                    if (Main.logica_Y.equals("Файлы отсутствуют")) {
+                        System.out.println("Файлы отсутствуют");
+                    }
+                    else if (Main.logica_yr.equals("yearReport доступен")) {
                         yearReport(paths);
                     } else {
                         System.out.println("** Необходимо считать годовой отчёт");
@@ -109,20 +131,31 @@ public class Main {
 
     private static void readMonthlyReports(List<Path> paths) throws Exception {
 
-        Path fileName1 = paths.get(0).getFileName();
-        System.out.println(fileName1);
+        paths = paths.stream().filter(p -> !p.toString().contains("y") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+        if (paths.size() == 0) {
+            System.out.println("Файлы отсутствуют");
+            logica_M = "Файлы отсутствуют";
+        } else {
 
-        Path fileName2 = paths.get(1).getFileName();
-        System.out.println(fileName2);
-
-        Path fileName3 = paths.get(2).getFileName();
-        System.out.println(fileName3);
+            for(int i=0; i < paths.size();  i++) {
+                Path fileName1 = paths.get(i).getFileName();
+                System.out.println(fileName1);
+                }
+        }
     }
 
     private static void readYearlyReports(List<Path> paths) throws Exception {
 
-        Path fileName = paths.get(3).getFileName();
-        System.out.println(fileName);
+        paths = paths.stream().filter(p -> p.toString().contains("y") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+        if (paths.size() == 0) {
+            System.out.println("Файлы отсутствуют");
+            logica_Y = "Файлы отсутствуют";
+        } else {
+
+        Path fileName = paths.get(0).getFileName();
+        System.out.println(fileName);}
     }
 
 
@@ -181,25 +214,37 @@ public class Main {
         System.out.println("Сверка отчетов | Расход |  Январь: " + (sumYearExpenses1 - sumExpenses1) + "  |  февраль: " + (sumYearExpenses2 - sumExpenses2) + "  |  март: " + (sumYearExpenses3 - sumExpenses3));
     }
 
-
-    private static void allMonthlyReports(List<Path> paths) throws Exception {
-
-        for(int i=0; i < paths.size();  i++) {
-            if (i == 3) {
-                break;
-            } else {
-                oneMonthlyReports(paths, i);
-            }
+    private static void howManyFiles(List<Path> paths) throws Exception {
+        paths = paths.stream().filter(p -> p.toString().contains("m") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+        if (paths.size() < 3) {
+            logica_M = "Недостаточно файлов";
+            logica_amr = "";
         }
     }
 
+    private static void allMonthlyReports(List<Path> paths) throws Exception {
+
+        paths = paths.stream().filter(p -> p.toString().contains("m") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+
+        for(int i=0; i < paths.size();  i++) {
+                oneMonthlyReports(paths, i);
+        }
+    }
+
+
     private static void yearReport(List<Path> paths) throws Exception {
         Parser parser = new Parser(",");
-        Path fileName = paths.get(3).getFileName();
+
+        paths = paths.stream().filter(p -> p.toString().contains("y") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+
+        Path fileName = paths.get(0).getFileName();
         System.out.println(fileName);
         System.out.println("------------");
 
-        List <YearlyReport> items = parser.load(new FileInputStream(new File(String.valueOf(paths.get(3)))), YearlyReport.class);
+        List <YearlyReport> items = parser.load(new FileInputStream(new File(String.valueOf(paths.get(0)))), YearlyReport.class);
         int sumProfit1 = items.stream().filter(p-> !p.getIsExpense()).filter(p->p.getMonth() == 01).mapToInt(YearlyReport:: getAmount).sum();
         int sumExpenses1 = items.stream().filter(p-> p.getIsExpense()).filter(p->p.getMonth() == 01).mapToInt(YearlyReport:: getAmount).sum();
         System.out.println("Прибыль за Январь | " + (sumProfit1 - sumExpenses1));
