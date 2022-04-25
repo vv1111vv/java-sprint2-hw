@@ -27,7 +27,8 @@ public class Main {
 
         Path path = Paths.get("resources");
         List<Path> paths = listFiles(path);
-
+        HashMap<Integer, ArrayList<Integer>> mapMonthlyReport = new HashMap<>();
+        HashMap<Integer, ArrayList<Integer>> mapAnnualReport = new HashMap<>();
         printMenu();
 
         int userInput;
@@ -37,14 +38,12 @@ public class Main {
 
             switch (userInput){
                 case 1:
-
                     readMonthlyReports(paths);
                     logicaAMR();
                     howManyFiles(paths);
                     printMenu();
                     break;
                 case 2:
-
                     readYearlyReports(paths);
                     logicaYR();
                     printMenu();
@@ -57,7 +56,8 @@ public class Main {
                         System.out.println("Недостаточно файлов");
                     }
                     else if (Main.logica_amr.equals("allMonthlyReports доступен") && Main.logica_yr.equals("yearReport доступен")) {
-                        reconciliationOfReports(paths);
+                        reconciliationOfReports(paths, mapMonthlyReport, mapAnnualReport);
+
                     } else {
                         System.out.println("** Для сверки необходимо считать все отчёты");
                     }
@@ -141,7 +141,7 @@ public class Main {
             for(int i=0; i < paths.size();  i++) {
                 Path fileName1 = paths.get(i).getFileName();
                 System.out.println(fileName1);
-                }
+            }
         }
     }
 
@@ -155,7 +155,8 @@ public class Main {
         } else {
 
         Path fileName = paths.get(0).getFileName();
-        System.out.println(fileName);}
+        System.out.println(fileName);
+        }
     }
 
 
@@ -176,42 +177,59 @@ public class Main {
         System.out.println("--------------------------------------------------");
     }
 
-    private static void reconciliationOfReports(List<Path> paths) throws Exception {
-        Parser parser = new Parser(",");
+    private static void reconciliationOfReports(List<Path> paths, HashMap<Integer, ArrayList<Integer>> mapMonthlyReport, HashMap<Integer, ArrayList<Integer>> mapAnnualReport) throws Exception {
+        monthlyReport(paths, mapMonthlyReport);
+        annualReport(paths, mapAnnualReport);
+        printReconciliationOfReports(mapMonthlyReport, mapAnnualReport);
+    }
 
-        List<MonthlyReport> items1 = parser.load(new FileInputStream(new File(String.valueOf(paths.get(0)))), MonthlyReport.class);
-        int sumProfit1 = items1.stream().filter(p -> !p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum();
-        int sumExpenses1 = items1.stream().filter(p -> p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum();
+    private static void printReconciliationOfReports(HashMap<Integer, ArrayList<Integer>> mapMonthlyReport, HashMap<Integer, ArrayList<Integer>> mapAnnualReport) {
 
-        List<MonthlyReport> items2 = parser.load(new FileInputStream(new File(String.valueOf(paths.get(1)))), MonthlyReport.class);
-        int sumProfit2 = items2.stream().filter(p -> !p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum();
-        int sumExpenses2 = items2.stream().filter(p -> p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum();
-
-        List<MonthlyReport> items3 = parser.load(new FileInputStream(new File(String.valueOf(paths.get(2)))), MonthlyReport.class);
-        int sumProfit3 = items3.stream().filter(p -> !p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum();
-        int sumExpenses3 = items3.stream().filter(p -> p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum();
-
-        System.out.println("Месячный отчет | Общие доходы  |  январь: " + sumProfit1 + " |  февраль: " + sumProfit2 + " |  март: " + sumProfit3);
-        System.out.println("Месячный отчет | Общие расходы |  январь: " + sumExpenses1 + " |  февраль: " + sumExpenses2 + " |  март: " + sumExpenses3);
+        System.out.println("Месячный отчет | Общие доходы  |  январь: " + mapMonthlyReport.get(0).get(0) + " |  февраль: " + mapMonthlyReport.get(1).get(0) + " |  март: " + mapMonthlyReport.get(2).get(0));
+        System.out.println("Месячный отчет | Общие расходы |  январь: " + mapMonthlyReport.get(0).get(1) + " |  февраль: " + mapMonthlyReport.get(1).get(1) + " |  март: " + mapMonthlyReport.get(2).get(1));
         System.out.println("-------------------------------------------------------------------");
-
-
-        List<YearlyReport> items = parser.load(new FileInputStream(new File(String.valueOf(paths.get(3)))), YearlyReport.class);
-        int sumYearProfit1 = items.stream().filter(p -> !p.getIsExpense()).filter(p -> p.getMonth() == 01).mapToInt(YearlyReport::getAmount).sum();
-        int sumYearExpenses1 = items.stream().filter(p -> p.getIsExpense()).filter(p -> p.getMonth() == 01).mapToInt(YearlyReport::getAmount).sum();
-
-        int sumYearProfit2 = items.stream().filter(p -> !p.getIsExpense()).filter(p -> p.getMonth() == 02).mapToInt(YearlyReport::getAmount).sum();
-        int sumYearExpenses2 = items.stream().filter(p -> p.getIsExpense()).filter(p -> p.getMonth() == 02).mapToInt(YearlyReport::getAmount).sum();
-
-        int sumYearProfit3 = items.stream().filter(p -> !p.getIsExpense()).filter(p -> p.getMonth() == 03).mapToInt(YearlyReport::getAmount).sum();
-        int sumYearExpenses3 = items.stream().filter(p -> p.getIsExpense()).filter(p -> p.getMonth() == 03).mapToInt(YearlyReport::getAmount).sum();
-
-        System.out.println("Годовой отчет | Доход  |  Январь: " + sumYearProfit1 + "  |  февраль: " + sumYearProfit2 + "  |  март: " + sumYearProfit3);
-        System.out.println("Годовой отчет | Расход |  Январь: " + sumYearExpenses1 + "  |  февраль: " + sumYearExpenses2 + "  |  март: " + sumYearExpenses3);
+        System.out.println("Годовой отчет | Общие доходы  |  январь: " + mapAnnualReport.get(0).get(0) + " |  февраль: " + mapAnnualReport.get(0).get(2) + " |  март: " + mapAnnualReport.get(0).get(4));
+        System.out.println("Годовой отчет | Общие расходы |  январь: " + mapAnnualReport.get(0).get(1) + " |  февраль: " + mapAnnualReport.get(0).get(3) + " |  март: " + mapAnnualReport.get(0).get(5));
         System.out.println("-------------------------------------------------------------------");
         System.out.println("** При успешной сверке отчетов вывести '0'");
-        System.out.println("Сверка отчетов | Доход  |  Январь: " + (sumYearProfit1 - sumProfit1) + "  |  февраль: " + (sumYearProfit2 - sumProfit2) + "  |  март: " + (sumYearProfit3 - sumProfit3));
-        System.out.println("Сверка отчетов | Расход |  Январь: " + (sumYearExpenses1 - sumExpenses1) + "  |  февраль: " + (sumYearExpenses2 - sumExpenses2) + "  |  март: " + (sumYearExpenses3 - sumExpenses3));
+        System.out.println("Сверка отчетов | Доход  |  Январь: " + (mapAnnualReport.get(0).get(0) - mapMonthlyReport.get(0).get(0)) + "  |  февраль: " + (mapAnnualReport.get(0).get(2) - mapMonthlyReport.get(1).get(0)) + "  |  март: " + (mapAnnualReport.get(0).get(4) - mapMonthlyReport.get(2).get(0)));
+        System.out.println("Сверка отчетов | Расход |  Январь: " + (mapAnnualReport.get(0).get(1) - mapMonthlyReport.get(0).get(1)) + "  |  февраль: " + (mapAnnualReport.get(0).get(3) - mapMonthlyReport.get(1).get(1)) + "  |  март: " + (mapAnnualReport.get(0).get(5) - mapMonthlyReport.get(2).get(1)));
+    }
+
+    private static void monthlyReport(List<Path> paths, HashMap<Integer, ArrayList<Integer>> mapMonthlyReport) throws Exception {
+        Parser parser = new Parser(",");
+
+        paths = paths.stream().filter(p -> p.toString().contains("m") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+
+        for (int i = 0; i < paths.size(); i++) {
+
+            ArrayList<Integer> mapMR = new ArrayList<>();
+            List<MonthlyReport> itemsx = parser.load(new FileInputStream(new File(String.valueOf(paths.get(i)))), MonthlyReport.class);
+            mapMR.add(itemsx.stream().filter(p -> !p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum());
+            mapMR.add(itemsx.stream().filter(p -> p.getIsExpense()).mapToInt(MonthlyReport::getTotal).sum());
+            mapMonthlyReport.put(i, mapMR);
+        }
+    }
+
+
+    private static void annualReport(List<Path> paths, HashMap<Integer, ArrayList<Integer>> mapAnnualReport) throws Exception {
+        Parser parser = new Parser(",");
+        paths = paths.stream().filter(p -> p.toString().contains("y") && Files.isRegularFile(p))
+                .collect(Collectors.toList());
+
+        for(int i=0; i < paths.size();  i++) {
+
+            ArrayList<Integer> mapAR = new ArrayList<>();
+            List<YearlyReport> items = parser.load(new FileInputStream(new File(String.valueOf(paths.get(i)))), YearlyReport.class);
+            mapAR.add(items.stream().filter(p -> !p.getIsExpense()).filter(p -> p.getMonth() == 01).mapToInt(YearlyReport::getAmount).sum()); // Доход
+            mapAR.add(items.stream().filter(p -> p.getIsExpense()).filter(p -> p.getMonth() == 01).mapToInt(YearlyReport::getAmount).sum()); // Расход
+            mapAR.add(items.stream().filter(p -> !p.getIsExpense()).filter(p -> p.getMonth() == 02).mapToInt(YearlyReport::getAmount).sum()); // Доход
+            mapAR.add(items.stream().filter(p -> p.getIsExpense()).filter(p -> p.getMonth() == 02).mapToInt(YearlyReport::getAmount).sum()); // Расход
+            mapAR.add(items.stream().filter(p -> !p.getIsExpense()).filter(p -> p.getMonth() == 03).mapToInt(YearlyReport::getAmount).sum()); // Доход
+            mapAR.add(items.stream().filter(p -> p.getIsExpense()).filter(p -> p.getMonth() == 03).mapToInt(YearlyReport::getAmount).sum()); // Расход
+            mapAnnualReport.put(i, mapAR);
+        }
     }
 
     private static void howManyFiles(List<Path> paths) throws Exception {
