@@ -37,4 +37,7 @@ class MonthlyReport {
         return quantity * sumOfOne;
     }
 
+    public String toString() {
+        return name + " | " + (quantity * sumOfOne);
+    }
 }
